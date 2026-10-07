@@ -144,3 +144,60 @@ def build_dataloader(
         )
 
         return test_loader
+
+
+def get_class_distribution(dataset):
+    """
+
+    """
+
+    image_counts = {"AD": 0, "NC": 0}
+    patients_by_class = {"AD": set(), "NC": set()}
+
+    if isinstance(dataset, Subset):
+        base_dataset = dataset.dataset
+        indices = dataset.indices
+    else:
+        base_dataset = dataset
+        indices = range(len(base_dataset.samples))
+
+    for index in indices:
+        image_path, label = base_dataset.samples[index]
+        class_name = base_dataset.classes[label]
+        patient_id = os.path.basename(image_path).split("_")[0]
+        image_counts[class_name] += 1
+        patients_by_class[class_name].add(patient_id)
+
+    return image_counts, patients_by_class
+
+
+def print_dataset_summary(train_loader, val_loader, test_loader):
+    """
+
+    """
+
+    train_images, train_patients = get_class_distribution(train_loader.dataset)
+    val_images, val_patients = get_class_distribution(val_loader.dataset)
+    test_images, test_patients = get_class_distribution(test_loader.dataset)
+
+    train_base_dataset = train_loader.dataset.dataset
+    print("\n=== ADNI dataset ===")
+    print(f"Train subjects      : {len(train_patients['AD'] | train_patients['NC']):,}")
+    print(f"Validation subjects : {len(val_patients['AD'] | val_patients['NC']):,}")
+    print(f"Test subjects       : {len(test_patients['AD'] | test_patients['NC']):,}")
+    print(f"Train images        : {sum(train_images.values()):,}")
+    print(f"Validation images   : {sum(val_images.values()):,}")
+    print(f"Test images         : {sum(test_images.values()):,}")
+    print(f"Classes             : {train_base_dataset.class_to_idx}")
+
+    print("\n=== Training Class Distribution ===")
+    print(f"AD: {train_images['AD']:,} images, {len(train_patients['AD']):,} subjects")
+    print(f"NC: {train_images['NC']:,} images, {len(train_patients['NC']):,} subjects")
+
+    print("\n=== Validation Class Distribution ===")
+    print(f"AD: {val_images['AD']:,} images, {len(val_patients['AD']):,} subjects")
+    print(f"NC: {val_images['NC']:,} images, {len(val_patients['NC']):,} subjects")
+
+    print("\n=== Test Class Distribution ===")
+    print(f"AD: {test_images['AD']:,} images, {len(test_patients['AD']):,} subjects")
+    print(f"NC: {test_images['NC']:,} images, {len(test_patients['NC']):,} subjects")
