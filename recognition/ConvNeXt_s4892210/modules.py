@@ -161,6 +161,7 @@ class ConvNeXtBlock(nn.Module):
         x = residual + self.stochastic_depth(x)
         return x
 
+
 class ConvNextStage(nn.Module):
     """
 
@@ -271,3 +272,16 @@ class ConvNeXtClassifier(nn.Module):
         x = self.avgpool(x)
         x = self.classifier(x)
         return x
+
+
+def build_model(model_name, num_classes=2):
+    """
+
+    """
+    if model_name == "baseline":
+        return BaselineCNN(num_classes=num_classes)
+
+    if model_name == "convnext":
+        return ConvNeXtClassifier(input_channels=3, num_classes=num_classes)
+
+    raise ValueError(f"Unknown model: {model_name}")
