@@ -258,6 +258,7 @@ class ConvNeXtClassifier(nn.Module):
         self.avgpool = nn.AdaptiveAvgPool2d(output_size=(1, 1))
         self.classifier = nn.Sequential(
             nn.Flatten(),
+            nn.LayerNorm(dims[-1], eps=1e-6),
             nn.Linear(in_features=dims[-1], out_features=num_classes)
         )
 
