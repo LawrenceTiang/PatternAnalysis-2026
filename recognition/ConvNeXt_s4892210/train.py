@@ -1,7 +1,12 @@
+import argparse
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
+import torch.nn as nn
+import torch.optim as optim
+from dataset import build_dataloader
+from modules import build_model
 
 # Parameter configurations
 EPOCHS = 300
@@ -122,3 +127,100 @@ def plot_training_curves(
     accuracy_path = os.path.join(OUTPUT_DIR, f"{model_name}_accuracy.png")
     plt.savefig(accuracy_path)
     plt.close()
+
+
+def train():
+    """
+
+    """
+    parser = argparse.ArgumentParser(
+        description="Train an ADNI image classification model."
+    )
+    parser.add_argument(
+        "--model",
+        type=str,
+        choices=["baseline", "convnext"],
+        default="convnext",
+        help="Model architecture."
+    )
+
+    args = parser.parse_args()
+    print(f"Using device: {DEVICE}")
+    print(f"Model: {args.model}\n")
+
+    train_loader, val_loader = build_dataloader(is_train=True, batch_size=BATCH_SIZE)
+    model = build_model(args.model).to(DEVICE)
+
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.AdamW(
+        model.parameters(),
+        lr=LEARNING_RATE,
+        weight_decay=WEIGHT_DECAY
+    )
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(
+        optimizer=optimizer,
+        T_max=EPOCHS
+    )
+
+    # Track metrics
+    train_losses = []
+    val_losses = []
+    train_accuracies = []
+    val_accuracies = []
+    best_val_loss = float("inf")
+    best_val_accuracy = 0.0
+    best_epoch = 0
+
+    for epoch in range(1, EPOCHS + 1):
+        train_loss, train_acc = train_one_epoch(
+            model,
+            train_loader,
+            criterion,
+            optimizer
+        )
+        val_loss, val_acc = validate(model, val_loader, criterion)
+
+        scheduler.step()
+
+        train_losses.append(train_loss)
+        val_losses.append(val_loss)
+        train_accuracies.append(train_acc)
+        val_accuracies.append(val_acc)
+
+        print(
+            f"Epoch {epoch:03d}/{EPOCHS} | "
+            f"Train Loss: {train_loss:.4f} | "
+            f"Train Acc: {train_acc:.4f} | "
+            f"Val Loss: {val_loss:.4f} | "
+            f"Val Acc: {val_acc:.4f}"
+        )
+
+        # Check for improvement
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
+            best_val_accuracy = val_acc
+            best_epoch = epoch
+
+            os.makedirs(OUTPUT_DIR, exist_ok=True)
+            model_path = os.path.join(OUTPUT_DIR, f"best_{args.model}.pth")
+            torch.save(model.state_dict(), model_path)
+
+            print(f"=== New Best Model (Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}) =====\n")
+
+    print(f"\n=== Best {args.model} Model ===")
+    print(f"Best Epoch: {best_epoch}")
+    print(f"Validation Loss: {best_val_loss:.4f}")
+    print(f"Validation Accuracy: {best_val_accuracy:.4f}")
+
+    # Plot results
+    plot_training_curves(
+        train_losses=train_losses,
+        val_losses=val_losses,
+        train_accuracies=train_accuracies,
+        val_accuracies=val_accuracies,
+        model_name=args.model
+    )
+
+
+if __name__ == "__main__":
+    train()
