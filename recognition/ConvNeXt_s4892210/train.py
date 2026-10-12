@@ -1,4 +1,6 @@
+import os
 import numpy as np
+import matplotlib.pyplot as plt
 import torch
 
 # Parameter configurations
@@ -77,3 +79,46 @@ def validate(model, dataloader, criterion):
     average_loss = running_loss / num_samples
     accuracy = correct / num_samples
     return average_loss, accuracy
+
+
+def plot_training_curves(
+    train_losses,
+    val_losses,
+    train_accuracies,
+    val_accuracies,
+    model_name
+):
+    """
+
+    """
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    epochs = range(1, len(train_losses) + 1)
+    display_name = "Baseline CNN" if model_name == "baseline" else "ConvNeXt"
+
+    # Loss plot
+    plt.figure(figsize=(10, 6))
+    plt.plot(epochs, train_losses, label="Training Loss")
+    plt.plot(epochs, val_losses, label="Validation Loss")
+    plt.xlabel("Epochs")
+    plt.ylabel("Loss")
+    plt.title(f"{display_name} Training and Validation Loss")
+    plt.legend()
+    plt.tight_layout()
+
+    loss_path = os.path.join(OUTPUT_DIR, f"{model_name}_loss.png")
+    plt.savefig(loss_path)
+    plt.close()
+
+    # Accuracy plot
+    plt.figure(figsize=(10, 6))
+    plt.plot(epochs, train_accuracies, label="Training Accuracy")
+    plt.plot(epochs, val_accuracies, label="Validation Accuracy")
+    plt.xlabel("Epochs")
+    plt.ylabel("Accuracy")
+    plt.title(f"{display_name} Training and Validation Accuracy")
+    plt.legend()
+    plt.tight_layout()
+
+    accuracy_path = os.path.join(OUTPUT_DIR, f"{model_name}_accuracy.png")
+    plt.savefig(accuracy_path)
+    plt.close()
