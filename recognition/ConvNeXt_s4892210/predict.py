@@ -36,3 +36,14 @@ def load_model(model_name, checkpoint_path):
     model.eval()
 
     return model
+
+
+def count_parameters(model):
+    """
+
+    """
+    return sum(
+        parameter.numel()
+        for parameter in model.parameters()
+        if parameter.requires_grad
+    )
