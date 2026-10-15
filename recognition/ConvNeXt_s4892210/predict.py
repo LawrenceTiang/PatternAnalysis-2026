@@ -1,5 +1,6 @@
 import os
 import time
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from sklearn.metrics import (
@@ -9,6 +10,7 @@ from sklearn.metrics import (
     precision_score,
     recall_score,
     roc_auc_score,
+    ConfusionMatrixDisplay,
 )
 from modules import build_model
 
@@ -195,16 +197,37 @@ def print_results(model_name, model, metrics, latency_ms, peak_vram):
 
     print(f"\n=== {display_name} Test Results ===")
     print(f"Test Accuracy       : {metrics['accuracy']:.4f}")
-    print(f"Macro-F1            : {metrics['macro_f1']:.4f}")
+    print(f"F1-Score            : {metrics['macro_f1']:.4f}")
     print(f"AUROC               : {metrics['auroc']:.4f}")
     print(f"AD Precision        : {metrics['ad_precision']:.4f}")
     print(f"AD Recall           : {metrics['ad_recall']:.4f}")
     print(f"NC Precision        : {metrics['nc_precision']:.4f}")
     print(f"NC Recall           : {metrics['nc_recall']:.4f}")
     print(f"Parameters          : {parameter_count:,}")
-    print(f"Inference Latency  : {latency_ms:.3f} ms/image")
+    print(f"Inference Latency   : {latency_ms:.3f} ms/image")
 
     if DEVICE.type == "cuda":
         print(f"Peak GPU VRAM      : {peak_vram / (1024 ** 3):.3f} GB")
     else:
-        print("Peak GPU VRAM      : N/A (CPU)")
+        print("Peak GPU VRAM       : N/A (CPU)")
+
+
+def plot_confusion_matrix(model_name, confusion_matrix_values):
+    """
+
+    """
+
+    display_name = "Baseline CNN" if model_name == "baseline" else "ConvNeXt"
+
+    fig, ax = plt.subplots(figsize=(7, 6))
+    disp = ConfusionMatrixDisplay(
+        confusion_matrix=confusion_matrix_values,
+        display_labels=["AD", "NC"]
+    )
+    disp.plot(ax=ax, cmap="Blues", colorbar=True)
+    ax.set_title(f"{display_name} Test Confusion Matrix")
+    plt.tight_layout()
+
+    path = os.path.join(OUTPUT_DIR, f"{model_name}_confusion_matrix.png")
+    plt.savefig(path, dpi=200)
+    plt.close()
