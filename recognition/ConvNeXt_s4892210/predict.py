@@ -3,6 +3,7 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+import torch.nn.functional as F
 from sklearn.metrics import (
     accuracy_score,
     confusion_matrix,
@@ -13,6 +14,7 @@ from sklearn.metrics import (
     roc_curve,
     ConfusionMatrixDisplay
 )
+from dataset import ADNI_MEAN, ADNI_STD
 from modules import build_model
 
 # Parameter configurations
@@ -294,4 +296,140 @@ def plot_accuracy_vs_confidence(labels, predictions, probabilities):
 
     path = os.path.join(OUTPUT_DIR, "convnext_accuracy_vs_confidence.png")
     plt.savefig(path, dpi=200)
+    plt.close()
+
+
+def select_examples(
+    labels,
+    predictions,
+    probabilities,
+    correct=True,
+    num_examples=9
+):
+    """
+
+    """
+    confidence = probabilities.max(axis=1)
+
+    if correct:
+        candidate_indices = np.where(predictions == labels)[0]
+    else:
+        candidate_indices = np.where(predictions != labels)[0]
+
+    if len(candidate_indices) == 0:
+        return []
+
+    confidence_ranges = [
+        (0.50, 0.60),
+        (0.60, 0.70),
+        (0.70, 0.80),
+        (0.80, 0.90),
+        (0.90, 1.01),
+    ]
+
+    selected = []
+    if num_examples == 9:
+        target_per_range = [2, 2, 2, 2, 1]
+    else:
+        target_per_range = [1] * len(confidence_ranges)
+
+    for ((lower, upper), target_count) in zip(confidence_ranges, target_per_range):
+        candidates = candidate_indices[
+            (confidence[candidate_indices] >= lower) &
+            (confidence[candidate_indices] < upper)
+        ]
+
+        candidates = candidates[np.argsort(confidence[candidates])]
+
+        for index in candidates[:target_count]:
+            selected.append(index)
+
+    if len(selected) < num_examples:
+        remaining = [index for index in candidate_indices if index not in selected]
+        remaining = sorted(remaining, key=lambda index: confidence[index])
+
+        for index in remaining:
+            selected.append(index)
+            if len(selected) >= num_examples:
+                break
+
+    return selected[:num_examples]
+
+
+def unnormalize_image(image):
+    """
+
+    """
+    image = image[0]
+    image = image * ADNI_STD + ADNI_MEAN
+    image = np.clip(image, 0.0, 1.0)
+    return image
+
+
+def plot_prediction_examples(
+    model_name,
+    labels,
+    predictions,
+    probabilities,
+    images,
+    correct=True
+):
+    """
+
+    """
+    if correct:
+        num_examples = 9
+        title = "Correct Predictions"
+        filename = (f"{model_name}_correct_predictions.png")
+    else:
+        num_examples = 5
+        title = "Failure Predictions"
+        filename = (f"{model_name}_failure_predictions.png")
+
+    indices = select_examples(
+        labels=labels,
+        predictions=predictions,
+        probabilities=probabilities,
+        correct=correct,
+        num_examples=num_examples
+    )
+
+    if len(indices) == 0:
+        print(f"No {'correct' if correct else 'failure'} examples found for {model_name}.")
+        return
+
+    rows = 3
+    cols = 3
+    fig, axes = plt.subplots(rows, cols, figsize=(12, 12))
+    axes = np.array(axes).reshape(rows, cols)
+
+    for ax in axes.flat:
+        ax.axis("off")
+
+    class_names = {0: "AD", 1: "NC"}
+    for plot_index, data_index in enumerate(indices):
+        row = plot_index // cols
+        col = plot_index % cols
+        ax = axes[row, col]
+        image = unnormalize_image(images[data_index])
+        prediction = class_names[predictions[data_index]]
+        true_label = class_names[labels[data_index]]
+        confidence = probabilities[data_index].max()
+
+        ax.imshow(image, cmap="gray")
+        ax.set_title(
+            f"Prediction: {prediction}\n"
+            f"True: {true_label}\n"
+            f"Confidence: {confidence * 100:.1f}%",
+            fontsize=11
+        )
+        ax.axis("off")
+
+    display_name = "Baseline CNN" if model_name == "baseline" else "ConvNeXt"
+
+    fig.suptitle(f"{display_name} - {title}", fontsize=16)
+    plt.tight_layout()
+
+    path = os.path.join(OUTPUT_DIR, filename)
+    plt.savefig(path, dpi=200, bbox_inches="tight")
     plt.close()
