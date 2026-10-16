@@ -259,3 +259,39 @@ def plot_roc_curve(labels, probabilities):
     path = os.path.join(OUTPUT_DIR, "convnext_roc_curve.png")
     plt.savefig(path, dpi=200)
     plt.close()
+
+
+def plot_accuracy_vs_confidence(labels, predictions, probabilities):
+    """
+
+    """
+    confidence = probabilities.max(axis=1)
+    num_bins = 10
+    bin_edges = np.linspace(0.0, 1.0, num_bins + 1)
+    bin_centers = []
+    bin_accuracies = []
+
+    for lower, upper in zip(bin_edges[:-1], bin_edges[1:]):
+        mask = ((confidence >= lower) & (confidence < upper))
+
+        if upper == 1.0:
+            mask = ((confidence >= lower) & (confidence <= upper))
+
+        if np.sum(mask) == 0:
+            continue
+
+        bin_centers.append((lower + upper) / 2)
+        bin_accuracies.append(np.mean(predictions[mask] == labels[mask]))
+
+    plt.figure(figsize=(8, 6))
+    plt.plot(bin_centers, bin_accuracies, marker="o")
+    plt.xlabel("Prediction Confidence")
+    plt.ylabel("Accuracy")
+    plt.title("ConvNeXt Accuracy vs Confidence")
+    plt.xlim(0.5, 1.0)
+    plt.ylim(0.0, 1.0)
+    plt.tight_layout()
+
+    path = os.path.join(OUTPUT_DIR, "convnext_accuracy_vs_confidence.png")
+    plt.savefig(path, dpi=200)
+    plt.close()
