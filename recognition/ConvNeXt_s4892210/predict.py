@@ -1,3 +1,7 @@
+"""
+
+"""
+
 import os
 import time
 import matplotlib.pyplot as plt
@@ -14,7 +18,7 @@ from sklearn.metrics import (
     roc_curve,
     ConfusionMatrixDisplay
 )
-from dataset import ADNI_MEAN, ADNI_STD
+from dataset import ADNI_MEAN, ADNI_STD, build_dataloader, print_dataset_summary
 from modules import build_model
 
 # Parameter configurations
@@ -433,3 +437,81 @@ def plot_prediction_examples(
     path = os.path.join(OUTPUT_DIR, filename)
     plt.savefig(path, dpi=200, bbox_inches="tight")
     plt.close()
+
+
+def evaluate_model(model_name, checkpoint_path, test_loader):
+    """
+
+    """
+    display_name = "Baseline CNN" if model_name == "baseline" else "ConvNeXt"
+    print(f"\n=== Evaluating {display_name} ===")
+
+    model = load_model(model_name, checkpoint_path)
+    (
+        predictions,
+        labels,
+        probabilities,
+        images,
+        latency_ms,
+        peak_vram
+    ) = run_inference(model, test_loader)
+    metrics = calculate_metrics(predictions, labels, probabilities)
+
+    print_results(
+        model_name=model_name,
+        model=model,
+        metrics=metrics,
+        latency_ms=latency_ms,
+        peak_vram=peak_vram
+    )
+    plot_confusion_matrix(
+        model_name=model_name,
+        confusion_matrix_values=metrics["confusion_matrix"]
+    )
+
+    if model_name == "convnext":
+        plot_roc_curve(labels=labels, probabilities=probabilities)
+        plot_accuracy_vs_confidence(
+            labels=labels,
+            predictions=predictions,
+            probabilities=probabilities
+        )
+        plot_prediction_examples(
+            model_name=model_name,
+            labels=labels,
+            predictions=predictions,
+            probabilities=probabilities,
+            images=images,
+            correct=True
+        )
+        plot_prediction_examples(
+            model_name=model_name,
+            labels=labels,
+            predictions=predictions,
+            probabilities=probabilities,
+            images=images,
+            correct=False
+        )
+
+
+def main():
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    train_loader, val_loader = build_dataloader(is_train=True, batch_size=BATCH_SIZE)
+    test_loader = build_dataloader(is_train=False, batch_size=BATCH_SIZE)
+
+    print(f"Using device: {DEVICE}")
+    print_dataset_summary(train_loader, val_loader, test_loader)
+    evaluate_model(
+        model_name="baseline",
+        checkpoint_path=BASELINE_CHECKPOINT,
+        test_loader=test_loader
+    )
+    evaluate_model(
+        model_name="convnext",
+        checkpoint_path=CONVNEXT_CHECKPOINT,
+        test_loader=test_loader
+    )
+
+
+if __name__ == "__main__":
+    main()
