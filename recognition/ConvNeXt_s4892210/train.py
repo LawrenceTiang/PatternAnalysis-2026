@@ -10,7 +10,7 @@ from modules import build_model
 
 # Parameter configurations
 EPOCHS = 300
-LEARNING_RATE = 1e-2
+LEARNING_RATE = 1e-3
 BATCH_SIZE = 256
 WEIGHT_DECAY = 0.05
 SEED = 42
