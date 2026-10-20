@@ -13,6 +13,7 @@ EPOCHS = 300
 LEARNING_RATE = 1e-3
 BATCH_SIZE = 256
 WEIGHT_DECAY = 0.05
+LABEL_SMOOTHING = 0.1
 SEED = 42
 OUTPUT_DIR = "assets"
 
@@ -151,7 +152,7 @@ def train():
     train_loader, val_loader = build_dataloader(is_train=True, batch_size=BATCH_SIZE)
     model = build_model(args.model).to(DEVICE)
 
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(label_smoothing=LABEL_SMOOTHING)
     optimizer = optim.AdamW(
         model.parameters(),
         lr=LEARNING_RATE,
