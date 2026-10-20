@@ -12,7 +12,7 @@ from modules import build_model
 EPOCHS = 300
 LEARNING_RATE = 1e-3
 BATCH_SIZE = 256
-WEIGHT_DECAY = 0.05
+WEIGHT_DECAY = 0.03
 LABEL_SMOOTHING = 0.1
 SEED = 42
 OUTPUT_DIR = "assets"
