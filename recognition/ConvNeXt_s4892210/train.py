@@ -9,7 +9,7 @@ from dataset import build_dataloader
 from modules import build_model
 
 # Parameter configurations
-EPOCHS = 300
+EPOCHS = 400
 LEARNING_RATE = 1e-3
 BATCH_SIZE = 256
 WEIGHT_DECAY = 0.01
