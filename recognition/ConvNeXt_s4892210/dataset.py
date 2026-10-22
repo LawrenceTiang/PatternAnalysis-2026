@@ -36,7 +36,7 @@ def build_transform(is_train):
                 mean=[ADNI_MEAN] * 3,
                 std=[ADNI_STD] * 3
             ),
-            transforms.RandomErasing(p=0.25),
+            transforms.RandomErasing(p=0.10),
         ])
     else:
         return transforms.Compose([
