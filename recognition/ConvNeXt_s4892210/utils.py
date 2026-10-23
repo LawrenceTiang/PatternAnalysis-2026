@@ -1,5 +1,16 @@
 """
+Author: Lawrence Tiang  
+Student ID: s4892210  
 
+Description:
+    Calculate the mean and standard deviation of pixel intensities
+    across the ADNI training dataset. Images from the AD and NC
+    classes are converted to grayscale and their pixel intensities
+    are scaled to [0, 1]. The calculated statistics are used to
+    normalise images during model training and evaluation.
+
+Usage:
+    python util.py
 """
 
 from pathlib import Path
