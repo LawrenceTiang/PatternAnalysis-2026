@@ -169,14 +169,15 @@ recognition/ConvNeXt_s4892210/
 │   ├── convnext_trail_loss3.png
 │   ├── nc_sample.jpeg
 │   └── pipeline.png
+├── outputs/
+│   ├── predict.out
+│   ├── trainbase.out
+│   └── trainconvnext.out
 ├── dataset.py
 ├── modules.py
-├── predict.out
 ├── predict.py
 ├── README.md
 ├── train.py
-├── trainbase.out
-├── trainconvnext.out
 └── utils.py
 ```
 
